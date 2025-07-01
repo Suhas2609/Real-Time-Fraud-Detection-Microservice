@@ -1,0 +1,42 @@
+# === Java / Maven ===
+target/
+*.class
+*.jar
+*.war
+*.log
+*.iml
+.mvn/
+HELP.md
+mvnw
+mvnw.cmd
+spring-boot-devtools.properties
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env/
+venv/
+env/
+Include/
+Lib/
+Scripts/
+pyvenv.cfg
+
+# === IDEs / System ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Data / Models ===
+*.csv
+
+# === Logs ===
+*.log
+
+# === Jupyter Notebook Checkpoints ===
+.ipynb_checkpoints/
