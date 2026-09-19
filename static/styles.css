@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root { --ink:#172321; --muted:#6d7c76; --paper:#f5f4ee; --panel:#fffef9; --line:#d9ded5; --mint:#b8e8cf; --coral:#ef806d; --yellow:#f1c75b; }
+* { box-sizing:border-box; }
+body { margin:0; background:radial-gradient(circle at 100% 0%, #d8ece0 0, transparent 35%), var(--paper); color:var(--ink); font-family:'Space Grotesk', sans-serif; }
+.shell { max-width:1280px; margin:auto; padding:48px 28px 72px; }
+.hero { max-width:720px; margin-bottom:32px; }
+.eyebrow { margin:0 0 10px; color:#5e7569; font:500 11px 'DM Mono', monospace; letter-spacing:1.5px; }
+h1 { margin:0; font-size:clamp(42px, 7vw, 82px); line-height:.95; letter-spacing:-2px; }
+.intro { color:var(--muted); font-size:17px; margin:20px 0 0; max-width:550px; }
+.workspace { display:grid; grid-template-columns:minmax(0, 1.7fr) minmax(280px, .8fr); gap:18px; align-items:start; }
+.panel { background:color-mix(in srgb, var(--panel) 92%, transparent); border:1px solid var(--line); border-radius:8px; padding:24px; box-shadow:0 18px 45px rgba(38,55,48,.06); }
+.panel-heading { display:flex; align-items:end; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+h2 { margin:0; font-size:25px; }
+.panel-heading .quiet-button:first-of-type { margin-left:auto; }
+button { border:0; font:600 13px 'Space Grotesk', sans-serif; cursor:pointer; }
+.quiet-button { padding:8px 10px; color:var(--ink); background:#edf0e9; border-radius:4px; }
+.quiet-button:hover { background:var(--mint); }
+.transaction-selector { margin-left:auto; color:var(--muted); font:11px 'DM Mono', monospace; }
+.transaction-selector select { min-width:170px; margin-top:6px; border:1px solid var(--line); border-radius:4px; padding:9px; color:var(--ink); background:#fff; font:13px 'DM Mono', monospace; }
+.transaction-id, .feature-grid label { color:var(--muted); font:11px 'DM Mono', monospace; }
+.transaction-id { display:block; margin-bottom:18px; }
+input { display:block; width:100%; margin-top:6px; border:1px solid var(--line); border-radius:4px; padding:10px 9px; color:var(--ink); background:#fff; font:14px 'DM Mono', monospace; }
+input:focus { outline:2px solid var(--mint); border-color:transparent; }
+.feature-grid { display:grid; grid-template-columns:repeat(4, minmax(76px,1fr)); gap:10px; }
+.submit-button { width:100%; margin-top:24px; padding:14px; color:var(--ink); background:var(--mint); border-radius:4px; font-size:15px; }
+.submit-button:hover { background:#95d9b6; }
+.result-panel { position:sticky; top:20px; min-height:370px; }
+.status { display:inline-block; margin:20px 0 28px; padding:8px 10px; border-radius:3px; font:500 12px 'DM Mono', monospace; }
+.status.pending { background:#edf0e9; color:var(--muted); }
+.status.legit { background:var(--mint); }
+.status.fraud { background:var(--coral); }
+.error-status, .error { color:#ad493c; }
+.score-wrap { display:flex; align-items:baseline; gap:8px; }
+#score { font-size:54px; font-weight:600; letter-spacing:-2px; }
+.score-wrap small { color:var(--muted); font:12px 'DM Mono', monospace; }
+.meter { height:10px; margin:18px 0 30px; background:#e8ebe4; border-radius:2px; overflow:hidden; }
+#meter-fill { display:block; width:0; height:100%; background:var(--coral); transition:width .4s ease; }
+.details { margin:0; border-top:1px solid var(--line); }
+.details div { display:flex; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--line); }
+.details dt, .details dd { margin:0; font:12px 'DM Mono', monospace; }
+.details dt { color:var(--muted); }
+.details dd { text-align:right; max-width:62%; overflow-wrap:anywhere; }
+.error { min-height:18px; font:12px 'DM Mono', monospace; }
+@media (max-width: 820px) { .shell { padding:30px 16px 50px; } .workspace { grid-template-columns:1fr; } .result-panel { position:static; } }
+@media (max-width: 480px) { .feature-grid { grid-template-columns:repeat(2, 1fr); } .transaction-selector { margin-left:0; width:100%; } .transaction-selector select { width:100%; } }

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fraud Signal Lab</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">REAL-TIME TRANSACTION SCREENING</p>
+      <h1>Fraud Signal Lab</h1>
+      <p class="intro">Submit a model-shaped transaction and watch the score move through HTTP and Kafka.</p>
+    </header>
+
+    <section class="workspace">
+      <form id="transaction-form" class="panel form-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">INPUT VECTOR</p>
+            <h2>Transaction features</h2>
+          </div>
+          <label class="transaction-selector">Choose a transaction
+            <select id="transaction-select">
+              <option value="">Select one</option>
+            </select>
+          </label>
+        </div>
+        <label class="transaction-id">Transaction ID
+          <input id="txn-id" name="txnId" value="web-demo-001" required>
+        </label>
+        <div id="feature-grid" class="feature-grid"></div>
+        <button class="submit-button" type="submit">Score transaction <span aria-hidden="true">→</span></button>
+      </form>
+
+      <aside class="panel result-panel" aria-live="polite">
+        <p class="eyebrow">DECISION</p>
+        <div id="status" class="status pending">Waiting for a transaction</div>
+        <div class="score-wrap"><span id="score">--</span><small>probability</small></div>
+        <div class="meter"><span id="meter-fill"></span></div>
+        <dl class="details">
+          <div><dt>Threshold</dt><dd id="threshold">--</dd></div>
+          <div><dt>Kafka event</dt><dd id="kafka-status">Not sent</dd></div>
+        </dl>
+        <p id="error" class="error"></p>
+      </aside>
+    </section>
+  </main>
+  <script>
+    const featureGrid = document.querySelector('#feature-grid');
+    const featureNames = [...Array(28)].map((_, index) => `V${index + 1}`).concat('Amount');
+    const transactions = {{ demo_transactions | tojson }};
+    const presetFeatures = [
+      [
+        1.19185711131486, 0.26615071205963, 0.16648011335321, 0.44815407846091,
+        0.06001764928222, -0.08236080881556, -0.07880298333231, -0.0851023299179,
+        0.0843748177347, -0.25542512810918, 0.14955432943664, 0.12137645267645,
+        -0.5778296533114, -0.08126395367805, -0.05619092026612, 1.01082091647892,
+        -0.63896421223973, 0.02559632783428, 0.21923719440792, -0.0736222014294,
+        -0.00614631234784, -0.17889249111868, 0.05645663055512, -0.09744442692158,
+        0.01305140776583, 0.01254501170529, 0.03555419558799, -0.0154173905143, 7.77
+      ],
+      [
+        -2.3122265423263, 1.95199201064158, -1.60985073229769, 3.9979055875468,
+        -0.52218786466776, -1.4265453195903, -2.53738730624579, 1.39165724829804,
+        -2.77008927719433, -2.77227214465915, 3.20203320709655, -2.89990738849456,
+        -0.59522188132461, -4.28925378244217, 0.38972412027448, -1.14074717974776,
+        -2.83005567450437, -0.01682246818083, 0.4169557050379, 0.12691055906147,
+        0.51723237086176, -0.0350493686053, -0.46521107618239, 0.32019819851453,
+        0.04451916747317, 0.1778397982844, 0.26114500256767, -0.1432758746988, 0.0
+      ]
+    ];
+
+    transactions.forEach((transaction, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = `Transaction ${String(index + 1).padStart(2, '0')}`;
+      document.querySelector('#transaction-select').appendChild(option);
+    });
+
+    featureNames.forEach((name, index) => {
+      const label = document.createElement('label');
+      label.innerHTML = `${name}<input name="${name}" type="number" step="any" required>`;
+      label.querySelector('input').value = presetFeatures[0][index];
+      featureGrid.appendChild(label);
+    });
+
+    function loadTransaction(index) {
+      const features = transactions[index]?.features || presetFeatures[0];
+      featureNames.forEach((feature, index) => {
+        document.querySelector(`[name="${feature}"]`).value = features[index];
+      });
+      document.querySelector('#txn-id').value = transactions[index]?.txnId || 'web-demo-001';
+      document.querySelector('#status').className = 'status pending';
+      document.querySelector('#status').textContent = 'Ready to score';
+      document.querySelector('#score').textContent = '--';
+      document.querySelector('#threshold').textContent = '--';
+      document.querySelector('#kafka-status').textContent = 'Not sent';
+    }
+    document.querySelector('#transaction-select').onchange = (event) => {
+      if (event.target.value !== '') loadTransaction(Number(event.target.value));
+    };
+
+    document.querySelector('#transaction-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const features = featureNames.map((feature) => Number(document.querySelector(`[name="${feature}"]`).value));
+      const status = document.querySelector('#status');
+      status.className = 'status pending';
+      status.textContent = 'Scoring transaction...';
+      document.querySelector('#error').textContent = '';
+      try {
+        const response = await fetch('/api/demo/predict', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({txnId: document.querySelector('#txn-id').value, features})
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Prediction failed');
+        status.className = `status ${result.is_fraud ? 'fraud' : 'legit'}`;
+        status.textContent = result.is_fraud ? 'FRAUD DETECTED' : 'LEGITIMATE';
+        document.querySelector('#score').textContent = `${(result.probability * 100).toFixed(2)}%`;
+        document.querySelector('#threshold').textContent = `${(result.threshold * 100).toFixed(2)}%`;
+        document.querySelector('#meter-fill').style.width = `${Math.min(result.probability * 100, 100)}%`;
+        document.querySelector('#kafka-status').textContent = result.kafkaPublished ? 'Published to transactions' : `Not published${result.kafkaError ? `: ${result.kafkaError}` : ''}`;
+      } catch (error) {
+        status.className = 'status error-status';
+        status.textContent = 'Request failed';
+        document.querySelector('#error').textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

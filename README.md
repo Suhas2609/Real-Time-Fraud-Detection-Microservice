@@ -37,7 +37,95 @@ This project demonstrates a modular, real-time fraud detection architecture usin
 
 ### Prerequisites
 
-*
+* Python 3.11 or newer
+* Java 21
+* Docker Desktop
+
+### Browser Demo Architecture
+
+The demo has two observable paths for the same transaction:
+
+```text
+Browser -> Flask /api/demo/predict -> XGBoost score -> Browser result
+                                      |
+                                      v
+                              Spring /api/transactions
+                                      |
+                                      v
+                         Kafka transactions topic
+                                      |
+                                      v
+                         Spring consumer -> Flask /predict
+                                      |
+                                      v
+                         Kafka alerts topic when fraudulent
+```
+
+The website accepts the original dataset feature format: `V1` through `V28` and `Amount` (29 values). The website route standardizes `Amount` with `model/scaler_amount.pkl` exactly once before sending the event to Spring. The existing `/predict` endpoint receives model-ready values from Spring.
+
+### 1. Create the Python environment
+
+From the repository root, create a fresh environment if the old `fraud` environment no longer points to an installed Python:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+If `py -3.11` is unavailable, install Python 3.11 from python.org, enable the PATH option, reopen PowerShell, and repeat the commands.
+
+### 2. Start Kafka and create topics
+
+Docker Desktop must be running.
+
+```powershell
+docker compose up -d
+docker compose ps
+```
+
+The Compose startup creates these topics automatically:
+
+* `transactions`: input events with `{txnId, features}`
+* `alerts`: fraudulent transactions emitted by Spring
+
+The broker is available at `localhost:9092`.
+
+### 3. Start the Flask website
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python app.py
+```
+
+Open <http://localhost:5000>. The page provides ten neutral transaction choices, editable feature values, and displays the probability, threshold, model decision, and Kafka publish status only after submission. The transaction list does not reveal the source class before the model runs.
+
+### 4. Start the Spring Boot service
+
+In a second terminal:
+
+```powershell
+Set-Location fraud\fraud_detection
+\.\mvnw.cmd spring-boot:run
+```
+
+Spring exposes `POST http://localhost:8080/api/transactions` for the website's Kafka handoff, consumes `transactions`, calls Flask, and publishes fraud transactions to `alerts`.
+
+### 5. Observe fraud alerts
+
+```powershell
+docker exec -it fraud-demo-kafka /opt/kafka/bin/kafka-console-consumer.sh `
+  --bootstrap-server localhost:9092 `
+  --topic alerts `
+  --from-beginning
+```
+
+Select any transaction in the browser and press **Score transaction**. The page should show an immediate model score, Spring should log the downstream decision, and transactions classified as fraud should appear in `alerts`.
+
+### Dataset-derived demo input
+
+`demo/demo_transactions.json` contains ten anonymous rows copied from `creditcard.csv`. Each record contains 29 values in the exact model order. The file intentionally contains no expected labels; classification is determined by the model at runtime.
 
 ### 1. Set Up Kafka Topics
 

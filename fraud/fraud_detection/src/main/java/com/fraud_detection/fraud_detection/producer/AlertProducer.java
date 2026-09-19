@@ -16,6 +16,15 @@ public class AlertProducer {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    public void publishTransaction(Transaction txn) {
+        try {
+            String message = objectMapper.writeValueAsString(txn);
+            kafkaTemplate.send("transactions", txn.getTxnId(), message);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to publish transaction", e);
+        }
+    }
+
     public void publishAlert(Transaction txn) {
         try {
             String message = objectMapper.writeValueAsString(txn);
